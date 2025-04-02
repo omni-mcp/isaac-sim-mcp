@@ -46,6 +46,7 @@ cd ~/.local/share/ov/pkg/isaac-sim-4.2.0
 
 Verify the extension starts successfully. The output should look like:
 
+```
 [7.160s] [ext: isaac.sim.mcp_extension-0.1.0] startup
 trigger  on_startup for:  isaac.sim.mcp_extension-0.1.0
 settings:  {'envPath': '/home/ubuntu/.local/share/ov/data/Kit/Isaac-Sim/4.2/pip3-envs/default', 'archiveDirs': {}, 'installCheckIgnoreVersion': False, 'allowOnlineIndex': True, 'tryUpgradePipOnFirstUse': False}
