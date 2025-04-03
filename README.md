@@ -160,3 +160,22 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Video Demonstrations
+
+Below are demonstrations of the Isaac Sim MCP Extension in action:
+
+### Robot Party Demo
+
+![Robot Party Demo](media/add_more_robot_into_party.gif)
+
+*GIF: Adding more robots to the simulation using natural language commands*
+
+
+### Video Format (MP4)
+
+For higher quality video, you can access the MP4 version directly:
+
+- [Robot Party Demo (MP4)](media/add_more_robot_into_party.mp4)
+
+When viewing on GitHub, you can click the link above to view or download the MP4 file.
