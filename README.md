@@ -16,10 +16,10 @@ The MCP Server and its extension leverage the Model Context Protocol (MCP) frame
 - Python 3.9+
 - Cursor AI editor for MCP integration
 
-## Pre-requisite
+## **Mandatory** Pre-requisite
 
 - Install uv/uvx: [https://github.com/astral-sh/uv](https://github.com/astral-sh/uv)
-- Install mcp[cli]: [https://github.com/cursor-ai/mcp-python](https://github.com/cursor-ai/mcp-python)
+- Install mcp[cli]: [uv add "mcp[cli]"](https://pypi.org/project/mcp/)
 
 ## Installation
 
@@ -83,6 +83,7 @@ uv run mcp dev ~/Documents/isaac-sim-mcp/isaac_mcp/server.py
 You can visit the debug page through http://localhost:5173
 
 ## Example Prompts for Simulation
+Notice: Switch to Agent mode in top left of Chat dialog before you type prompt and choose sonnet 3.7 for better coding.
 
 ### Robot Party
 ```
