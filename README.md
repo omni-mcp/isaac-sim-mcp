@@ -1,6 +1,6 @@
-# Isaac Sim MCP Extension
+# Isaac Sim MCP Extension and MCP Server
 
-This extension enables natural language control of NVIDIA Isaac Sim through the Mechanical, Computer, and Programmable (MCP) framework, allowing simulation manipulation through conversational AI.
+The MCP Server and its extension leverage the Model Context Protocol (MCP) framework to enable natural language control of NVIDIA Isaac Sim, transforming conversational AI inputs into precise simulation manipulation. This expansion bridges the MCP ecosystem with embodied intelligence applications.
 
 ## Features
 
@@ -54,6 +54,8 @@ Server thread startedIsaac Sim MCP server started on localhost:8766
 ```
 
 The extension should be listening at **localhost:8766** by default.
+
+
 
 ### Install MCP Server
 
@@ -111,6 +113,45 @@ reference to g1.py to create an new g1 robot simulation and allow robot g1 walk 
 create more obstacles in the stage
 
 ```
+
+## MCP Tools
+
+The Isaac Sim MCP Extension provides several specialized tools that can be accessed through natural language in Cursor AI. These tools enable you to control and manipulate NVIDIA Isaac Sim with simple commands:
+
+### Connection and Scene Management
+
+- **get_scene_info** - Pings the Isaac Sim Extension Server to verify connection status and retrieve basic scene information. Always use this first to ensure the connection is active.
+
+### Physics and Environment Creation
+
+- **create_physics_scene** - Creates a physics scene with configurable parameters:
+  - `objects`: List of objects to create (each with type and position)
+  - `floor`: Whether to create a ground plane (default: true)
+  - `gravity`: Vector defining gravity direction and magnitude (default: [0, -0.981, 0])
+  - `scene_name`: Name for the scene (default: "physics_scene")
+
+### Robot Creation and Control
+
+- **create_robot** - Creates a robot in the scene at a specified position:
+  - `robot_type`: Type of robot to create (options: "franka", "jetbot", "carter", "g1", "go1")
+  - `position`: [x, y, z] position coordinates
+
+### Omniverse Kit and Scripting
+
+- **omni_kit_command** - Executes an Omni Kit command:
+  - `command`: The Omni Kit command to execute (e.g., "CreatePrim")
+  - `prim_type`: The primitive type for the command (e.g., "Sphere")
+
+- **execute_script** - Executes arbitrary Python code in Isaac Sim:
+  - `code`: Python code to execute
+
+### Usage Best Practices
+
+1. Always check connection with `get_scene_info` before executing any commands
+2. Initialize a physics scene with `create_physics_scene` before adding robots
+3. Use `create_robot` for standard robot placement before trying custom scripts
+4. For complex simulations, use `execute_script` with proper async patterns
+5. Preview code in chat before execution for verification
 
 ## Contributing
 
