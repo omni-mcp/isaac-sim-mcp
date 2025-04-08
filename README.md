@@ -19,7 +19,7 @@ The MCP Server and its extension leverage the Model Context Protocol (MCP) frame
 ## **Mandatory** Pre-requisite
 
 - Install uv/uvx: [https://github.com/astral-sh/uv](https://github.com/astral-sh/uv)
-- Install mcp[cli]: [uv add "mcp[cli]"](https://pypi.org/project/mcp/)
+- Install mcp[cli] to base env: [uv pip install "mcp[cli]"](https://pypi.org/project/mcp/)
 
 ## Installation
 
@@ -59,8 +59,13 @@ The extension should be listening at **localhost:8766** by default.
 
 ### Install MCP Server
 
-1. Start Cursor and open the folder `~/Documents/isaac-sim-mcp`
-2. Go to Cursor preferences, choose MCP and add a global MCP server:
+1. Go to terminal and run, make sure mcp server could start sucessfully at terminal with base venv.
+   ```
+   uv pip install "mcp[cli]"
+   uv run /home/ubuntu/Documents/isaac-sim-mcp/isaac_mcp/server.py
+   ```
+2. Start Cursor and open the folder `~/Documents/isaac-sim-mcp`
+3. Go to Cursor preferences, choose MCP and add a global MCP server:
 
 ```json
 {
