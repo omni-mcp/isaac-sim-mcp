@@ -5,6 +5,27 @@ All notable changes to the isaac-sim-mcp project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2024-04-15
+
+### Added
+- Beaver3D integration for 3D model generation from text prompts and images
+- Asynchronous model loading with asyncio support
+- Task caching system to prevent duplicate model generation
+- New MCP tools:
+  - `generate_3d_from_text_or_image` for AI-powered 3D asset creation
+  - `transform` for manipulating generated 3D models in the scene
+- Texture and material binding for generated 3D models
+
+### Improved
+- Asynchronous command execution with `run_coroutine`
+- Error handling and reporting for 3D generation tasks
+- Performance optimizations for model loading
+
+### Technical Details
+- Integration with Beaver3D API for 3D generation
+- Task monitoring with callback support
+- Position and scale customization for generated models
+
 ## [0.1.0] - 2025-04-02
 
 ### Added

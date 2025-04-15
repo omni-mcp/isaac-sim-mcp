@@ -47,6 +47,9 @@ from omni.isaac.nucleus import get_assets_root_path
 from omni.isaac.core.prims import XFormPrim
 import numpy as np
 from omni.isaac.core import World
+# Import Beaver3d and USDLoader
+from isaac_sim_mcp_extension.gen3d import Beaver3d
+from isaac_sim_mcp_extension.usd import USDLoader
 
 # Extension Methods required by Omniverse Kit
 # Any class derived from `omni.ext.IExt` in top level module (defined in `python.modules` of `extension.toml`) will be
@@ -70,6 +73,8 @@ class MCPExtension(omni.ext.IExt):
         self._server_thread = None
         self._models = None
         self._settings = carb.settings.get_settings()
+        self._image_url_cache = {} # cache for image url
+        self._text_prompt_cache = {} # cache for text prompt
         
 
     def on_startup(self, ext_id: str):
@@ -78,7 +83,8 @@ class MCPExtension(omni.ext.IExt):
         print("settings: ", self._settings.get("/exts/omni.kit.pipapi"))
         self.port = self._settings.get("/exts/isaac.sim.mcp/server, port") or 8766
         self.host = self._settings.get("/exts/isaac.sim.mcp/server.host") or "localhost"
-        self.running = False
+        if not hasattr(self, 'running'):
+            self.running = False
 
         self.ext_id = ext_id
         self._usd_context = omni.usd.get_context()
@@ -147,7 +153,9 @@ class MCPExtension(omni.ext.IExt):
         """Main server loop in a separate thread"""
         print("Server thread started")
         self.socket.settimeout(1.0)  # Timeout to allow for stopping
-        
+        if not hasattr(self, 'running'):
+            self.running = False
+
         while self.running:
             try:
                 # Accept new connection
@@ -289,9 +297,10 @@ class MCPExtension(omni.ext.IExt):
             "omini_kit_command": self.omini_kit_command,
             "create_physics_scene": self.create_physics_scene,
             "create_robot": self.create_robot,
+            "generate_3d_from_text_or_image": self.generate_3d_from_text_or_image,
+            "transform": self.transform,
         }
         
-       
         handler = handlers.get(cmd_type)
         if handler:
             try:
@@ -609,3 +618,155 @@ class MCPExtension(omni.ext.IExt):
                     "traceback": traceback.format_exc()
                 }
    
+    def generate_3d_from_text_or_image(self, text_prompt=None, image_url=None, position=(0, 0, 50), scale=(10, 10, 10)):
+        """
+        Generate a 3D model from text or image, load it into the scene and transform it.
+        
+        Args:
+            text_prompt (str, optional): Text prompt for 3D generation
+            image_url (str, optional): URL of image for 3D generation
+            position (tuple, optional): Position to place the model
+            scale (tuple, optional): Scale of the model
+            
+        Returns:
+            dict: Dictionary with the task_id and prim_path
+        """
+        try:
+            # Initialize Beaver3d
+            beaver = Beaver3d()
+            
+            # Determine generation method based on inputs
+            # if image_url and text_prompt:
+            #     # Generate 3D from image with text prompt as options
+            #     task_id = beaver.generate_3d_from_image(image_url, text_prompt)
+            #     print(f"3D model generation from image with text options started with task ID: {task_id}")
+            # Check if we have cached task IDs for this input
+            if not hasattr(self, '_image_url_cache'):
+                self._image_url_cache = {}  # Cache for image URL to task_id mapping
+            
+            if not hasattr(self, '_text_prompt_cache'):
+                self._text_prompt_cache = {}  # Cache for text prompt to task_id mapping
+            
+            # Check if we can retrieve task_id from cache
+            task_id = None
+            if image_url and image_url in self._image_url_cache:
+                task_id = self._image_url_cache[image_url]
+                print(f"Using cached task ID: {task_id} for image URL: {image_url}")
+            elif text_prompt and text_prompt in self._text_prompt_cache:
+                task_id = self._text_prompt_cache[text_prompt]
+                print(f"Using cached task ID: {task_id} for text prompt: {text_prompt}")
+
+            if task_id: #cache hit
+                print(f"Using cached model ID: {task_id}")
+            elif image_url:
+                # Generate 3D from image only
+                task_id = beaver.generate_3d_from_image(image_url)
+                print(f"3D model generation from image started with task ID: {task_id}")
+            elif text_prompt:
+                # Generate 3D from text
+                task_id = beaver.generate_3d_from_text(text_prompt)
+                print(f"3D model generation from text started with task ID: {task_id}")
+            else:
+                return {
+                    "status": "error",
+                    "message": "Either text_prompt or image_url must be provided"
+                }
+            
+            # Monitor the task and download the result
+            # result_path = beaver.monitor_task_status(task_id)
+            # task = asyncio.create_task(
+                # beaver.monitor_task_status_async(
+                    # task_id, on_complete_callback=load_model_into_scene))
+            #await task
+            def load_model_into_scene(task_id, status, result_path):
+                print(f"{task_id} is {status}, 3D model  downloaded to: {result_path}")
+                # Only cache the task_id after successful download
+                if image_url and image_url not in self._image_url_cache:
+                    self._image_url_cache[image_url] = task_id
+                elif text_prompt and text_prompt not in self._text_prompt_cache:
+                    self._text_prompt_cache[text_prompt] = task_id
+                # Load the model into the scene
+                loader = USDLoader()
+                prim_path = loader.load_usd_model(task_id=task_id)
+                
+                # Load texture and create material
+                try:
+                    texture_path, material = loader.load_texture_and_create_material(task_id=task_id)
+                    
+                    # Bind texture to model
+                    loader.bind_texture_to_model()
+                except Exception as e:
+                    print(f"Warning: Texture loading failed, continuing without texture: {str(e)}")
+                
+                # Transform the model
+                loader.transform(position=position, scale=scale)
+            
+                return {
+                    "status": "success",
+                    "task_id": task_id,
+                    "prim_path": prim_path
+                }
+            
+            from omni.kit.async_engine import run_coroutine
+            task = run_coroutine(beaver.monitor_task_status_async(
+                task_id, on_complete_callback=load_model_into_scene))
+            
+            return {
+                    "status": "success",
+                    "task_id": task_id,
+                    "message": f"3D model generation started with task ID: {task_id}"
+            }
+            
+            
+            
+        except Exception as e:
+            print(f"Error generating 3D model: {str(e)}")
+            traceback.print_exc()
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+    
+    def transform(self, prim_path, position=(0, 0, 50), scale=(10, 10, 10)):
+        """
+        Transform a USD model by applying position and scale.
+        
+        Args:
+            prim_path (str): Path to the USD prim to transform
+            position (tuple, optional): The position to set (x, y, z)
+            scale (tuple, optional): The scale to set (x, y, z)
+            
+        Returns:
+            dict: Result information
+        """
+        try:
+            # Get the USD context
+            stage = omni.usd.get_context().get_stage()
+            
+            # Get the prim
+            prim = stage.GetPrimAtPath(prim_path)
+            if not prim:
+                return {
+                    "status": "error",
+                    "message": f"Prim not found at path: {prim_path}"
+                }
+            
+            # Initialize USDLoader
+            loader = USDLoader()
+            
+            # Transform the model
+            xformable = loader.transform(prim=prim, position=position, scale=scale)
+            
+            return {
+                "status": "success",
+                "message": f"Model at {prim_path} transformed successfully",
+                "position": position,
+                "scale": scale
+            }
+        except Exception as e:
+            print(f"Error transforming model: {str(e)}")
+            traceback.print_exc()
+            return {
+                "status": "error",
+                "message": str(e)
+            }
