@@ -50,6 +50,8 @@ from omni.isaac.core import World
 # Import Beaver3d and USDLoader
 from isaac_sim_mcp_extension.gen3d import Beaver3d
 from isaac_sim_mcp_extension.usd import USDLoader
+from isaac_sim_mcp_extension.usd import USDSearch3d
+import requests
 
 # Extension Methods required by Omniverse Kit
 # Any class derived from `omni.ext.IExt` in top level module (defined in `python.modules` of `extension.toml`) will be
@@ -299,6 +301,7 @@ class MCPExtension(omni.ext.IExt):
             "create_robot": self.create_robot,
             "generate_3d_from_text_or_image": self.generate_3d_from_text_or_image,
             "transform": self.transform,
+            "usd_search_3d_from_text": self.usd_search_3d_from_text,
         }
         
         handler = handlers.get(cmd_type)
@@ -719,6 +722,107 @@ class MCPExtension(omni.ext.IExt):
             
             
             
+        except Exception as e:
+            print(f"Error generating 3D model: {str(e)}")
+            traceback.print_exc()
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+    
+    def usd_search_3d_from_text(self, text_prompt:str, target_path:str, position=(0, 0, 50), scale=(10, 10, 10)):
+        """
+        search a USD assets in USD Search service, load it into the scene and transform it.
+        
+        Args:
+            text_prompt (str, optional): Text prompt for 3D generation
+            target_path (str, ): target path in current scene stage
+            position (tuple, optional): Position to place the model
+            scale (tuple, optional): Scale of the model
+            
+        Returns:
+            dict: Dictionary with the task_id and prim_path
+        """
+        try:
+            searcher3d = USDSearch3d()
+
+            if not hasattr(self, '_text_prompt_cache'):
+                self._text_prompt_cache = {}  # Cache for text prompt to task_id mapping
+            
+            # Check if we can retrieve task_id from cache
+            task_id = None
+            if not hasattr(self, '_text_prompt_cache'):
+                self._text_prompt_cache = {}  # Cache for text prompt to task_id mapping
+            elif text_prompt and text_prompt in self._text_prompt_cache:
+                task_id = self._text_prompt_cache[text_prompt]
+                print(f"Using cached task ID: {task_id} for text prompt: {text_prompt}")
+
+            if task_id: #cache hit
+                print(f"Using cached model ID: {task_id}")
+            elif text_prompt:
+                # Generate 3D from text
+                # task_id = searcher.generate_3d_from_text(text_prompt)
+                print(f"3D model generation from text started with task ID: {task_id}")
+            else:
+                return {
+                    "status": "error",
+                    "message": "Either text_prompt or image_url must be provided"
+                }
+            
+            response = searcher3d.search( text_prompt )
+            
+            details = json.dumps(response.json(), indent=2)
+            carb.log_info(f"usd_search_3d_from_text return code: {response.status_code}")
+            
+            # Monitor the task and download the result
+            # result_path = beaver.monitor_task_status(task_id)
+            # task = asyncio.create_task(
+                # beaver.monitor_task_status_async(
+                    # task_id, on_complete_callback=load_model_into_scene))
+            #await task
+            def load_model_into_scene(task_id, url, target_path):
+                #print(f"{task_id} is {status}, 3D model  url: {url}")
+                # Only cache the task_id after successful download
+                if text_prompt and text_prompt not in self._text_prompt_cache:
+                    self._text_prompt_cache[text_prompt] = task_id
+                # Load the model into the scene
+                loader = USDLoader()
+                prim_path = loader.load_usd_from_url( url, target_path )
+                
+                # Transform the model
+                #loader.transform(position=position, scale=scale)
+            
+                return {
+                    "status": "success",
+                    "task_id": task_id,
+                    "prim_path": prim_path
+                }
+            
+            #from omni.kit.async_engine import run_coroutine
+            #task = run_coroutine(searcher3d.monitor_task_status_async(
+            #    task_id, on_complete_callback=load_model_into_scene))
+            details = json.loads(details)
+            url = details[0]['url']
+
+            def complete_s3_url( url: str ) -> str:
+                #replace url                                    s3://deepsearch-demo-content/Assets/DigitalTwin/Assets/Warehouse/Storage/Drums/Plastic_A/PlasticDrum_A04_PR_V_NVD_01.usd
+                #to          https://omniverse-content-production.s3.us-west-2.amazonaws.com/Assets/DigitalTwin/Assets/Warehouse/Storage/Drums/Plastic_A/PlasticDrum_A04_PR_V_NVD_01.usd
+                
+                if url.find("s3://deepsearch-demo-content")==0:
+                    url = url.replace("s3://deepsearch-demo-content", "https://omniverse-content-production.s3.us-west-2.amazonaws.com")
+                    
+                return url
+            
+            url = complete_s3_url(url)
+            carb.log_info(f"url: {url}")
+            prim_path = load_model_into_scene(task_id, url, target_path=target_path)
+        
+            return {
+                    "status": "success",
+                    "task_id": task_id,
+                    "prim_path": prim_path,
+                    "message": f"3D model generation started with task ID: {task_id}, prim path in current scene stage: {prim_path}"
+            }
         except Exception as e:
             print(f"Error generating 3D model: {str(e)}")
             traceback.print_exc()

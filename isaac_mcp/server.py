@@ -452,8 +452,6 @@ simulation_context.stop()
         # return f"Error executing code: {str(e)}"
         return {"status": "error", "error": str(e), "message": "Error executing code"}
                 
-
-
 @mcp.prompt()
 def asset_creation_strategy() -> str:
     """Defines the preferred strategy for creating assets in Isaac Sim"""
@@ -666,6 +664,46 @@ def generate_3d_from_text_or_image(
             "scale": scale
         })
         
+        if result.get("status") == "success":
+            task_id = result.get("task_id")
+            prim_path = result.get("prim_path")
+            return f"Successfully generated 3D model with task ID: {task_id}, loaded at prim path: {prim_path}"
+        else:
+            return f"Error generating 3D model: {result.get('message', 'Unknown error')}"
+    except Exception as e:
+        logger.error(f"Error generating 3D model: {str(e)}")
+        return f"Error generating 3D model: {str(e)}"
+    
+@mcp.tool("usd_search_3d_from_text")
+def usd_search_3d_from_text(
+    ctx: Context,
+    text_prompt: str = None,
+    target_path: str = "/World/my_usd",
+    position: List[float] = [0, 0, 50],
+    scale: List[float] = [10, 10, 10]
+) -> str:
+    """
+    Generate a 3D model from text or image, load it into the scene and transform it.
+    
+    Args:
+        text_prompt (str, optional): Text prompt for 3D generation
+        image_url (str, optional): URL of image for 3D generation
+        position (list, optional): Position to place the model [x, y, z]
+        scale (list, optional): Scale of the model [x, y, z]
+        
+    Returns:
+        String with the task_id and prim_path information
+    """
+    if not text_prompt:
+        return "Error: Either text_prompt or image_url must be provided"
+    
+    try:
+        # Get the global connection
+        isaac = get_isaac_connection()
+        params = {"text_prompt": text_prompt, 
+                  "target_path": target_path}
+            
+        result = isaac.send_command("usd_search_3d_from_text", params)
         if result.get("status") == "success":
             task_id = result.get("task_id")
             prim_path = result.get("prim_path")
