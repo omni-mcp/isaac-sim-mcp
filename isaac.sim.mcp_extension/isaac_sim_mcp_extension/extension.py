@@ -50,6 +50,8 @@ from omni.isaac.core import World
 # Import Beaver3d and USDLoader
 from isaac_sim_mcp_extension.gen3d import Beaver3d
 from isaac_sim_mcp_extension.usd import USDLoader
+from isaac_sim_mcp_extension.usd import USDSearch3d
+import requests
 
 # Extension Methods required by Omniverse Kit
 # Any class derived from `omni.ext.IExt` in top level module (defined in `python.modules` of `extension.toml`) will be
@@ -299,6 +301,7 @@ class MCPExtension(omni.ext.IExt):
             "create_robot": self.create_robot,
             "generate_3d_from_text_or_image": self.generate_3d_from_text_or_image,
             "transform": self.transform,
+            "usd_search_3d_from_text": self.usd_search_3d_from_text,
         }
         
         handler = handlers.get(cmd_type)
@@ -721,6 +724,59 @@ class MCPExtension(omni.ext.IExt):
             
         except Exception as e:
             print(f"Error generating 3D model: {str(e)}")
+            traceback.print_exc()
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+    
+    def usd_search_3d_from_text(self, text_prompt:str, target_path:str, position=(0, 0, 50), scale=(10, 10, 10)):
+        """
+        search a USD assets in USD Search service, load it into the scene and transform it.
+        
+        Args:
+            text_prompt (str, optional): Text prompt for 3D generation
+            target_path (str, ): target path in current scene stage
+            position (tuple, optional): Position to place the model
+            scale (tuple, optional): Scale of the model
+            
+        Returns:
+            dict: Dictionary with prim_path
+        """
+        try:
+            if text_prompt:
+                print(f"3D model generation from text: {text_prompt}")
+            else:
+                return {
+                    "status": "error",
+                    "message": "text_prompt must be provided"
+                }
+            
+            searcher3d = USDSearch3d()
+            url = searcher3d.search( text_prompt )
+            
+            def load_model_into_scene(url, target_path):
+                # Load the model from url into the scene
+                loader = USDLoader()
+                prim_path = loader.load_usd_from_url( url, target_path )
+                print(f"loaded url {url} to scene, prim path is: {prim_path}")
+                
+                stage = omni.usd.get_context().get_stage()
+                prim = stage.GetPrimAtPath(prim_path)
+                # Transform the model
+                loader.transform(prim=prim, position=position, scale=scale)
+            
+                return prim_path
+            
+            prim_path = load_model_into_scene(url, target_path=target_path)
+        
+            return {
+                    "status": "success",
+                    "prim_path": prim_path,
+                    "message": f"3D model searching with prompt: {text_prompt}, return url: {url}, prim path in current scene: {prim_path}"
+            }
+        except Exception as e:
+            print(f"Error searching 3D model: {str(e)}")
             traceback.print_exc()
             return {
                 "status": "error",
