@@ -39,6 +39,10 @@ Isaac Sim extension folder should point to your project folder:
 # cd to your Isaac Sim installation directory
 # You can change assets root to local with --/persistent/isaac/asset_root/default="<your asset location>"
 # By default it is an AWS bucket, e.g. --/persistent/isaac/asset_root/default="/share/Assets/Isaac/4.2"
+# Setup API KEY for Beaver3d and NVIDIA
+export BEAVER3D_MODEL=<your beaver3d model name>
+export export ARK_API_KEY=<Your Bearver3D API Key>
+export NVIDIA_API_KEY="<your nvidia api key  and apply it from https://ngc.nvidia.com/signout>"
 
 cd ~/.local/share/ov/pkg/isaac-sim-4.2.0
 ./isaac-sim.sh --ext-folder /home/ubuntu/Documents/isaac-sim-mcp/ --enable isaac.sim.mcp_extension 
@@ -118,6 +122,23 @@ add more light in the stage
 reference to g1.py to create an new g1 robot simulation and allow robot g1 walk straight  from [0, 0, 0] to [3, 0, 0] and [3, 3, 0]
 create more obstacles in the stage
 
+```
+### Gen3D with beaver3d model support
+
+```
+Use following images to generate beaver 3d objects and place them into a grid area across [0, 0, 0] to [40, 40, 0] with scale [3, 3, 3]
+
+https://lvlecheng.tos-cn-beijing.volces.com/chore/model_gen_jpeg/TV%20shelf.png
+https://lvlecheng.tos-cn-beijing.volces.com/chore/model_gen_jpeg/chair.png
+https://lvlecheng.tos-cn-beijing.volces.com/chore/model_gen_jpeg/desk.png
+https://lvlecheng.tos-cn-beijing.volces.com/chore/model_gen_jpeg/fridge.png
+https://lvlecheng.tos-cn-beijing.volces.com/chore/model_gen_jpeg/sofa.png
+https://lvlecheng.tos-cn-beijing.volces.com/chore/model_gen_jpeg/tea%20desk.png
+```
+
+### USD search
+```
+search a rusty table and place it at [0, 5, 0] with scale [3, 3, 3]
 ```
 
 ## MCP Tools

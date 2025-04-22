@@ -5,6 +5,28 @@ All notable changes to the isaac-sim-mcp project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.3.0] - 2024-04-22
+
+### Added
+- USD asset search integration with `search_3d_usd_by_text` tool
+- Ability to search and load pre-existing 3D models from USD libraries
+- Support for custom positioning and scaling of USD models
+- Direct model transformation capabilities with the improved `transform` tool
+- Enhanced scene management with multi-object placement
+
+### Improved
+- Scene object manipulation with precise positioning controls
+- Asset loading performance and reliability
+- Error handling for model search and placement
+- Integration with existing physics scene management
+
+### Technical Details
+- Advanced USD model retrieval system
+- Optimized asset loading pipeline
+- Position and scale customization for USD models
+- Better compatibility with Isaac Sim's native USD handling
+
 ## [0.2.1] - 2024-04-15
 
 ### Added

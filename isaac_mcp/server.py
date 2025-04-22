@@ -674,8 +674,8 @@ def generate_3d_from_text_or_image(
         logger.error(f"Error generating 3D model: {str(e)}")
         return f"Error generating 3D model: {str(e)}"
     
-@mcp.tool("usd_search_3d_from_text")
-def usd_search_3d_from_text(
+@mcp.tool("search_3d_usd_by_text")
+def search_3d_usd_by_text(
     ctx: Context,
     text_prompt: str = None,
     target_path: str = "/World/my_usd",
@@ -683,16 +683,16 @@ def usd_search_3d_from_text(
     scale: List[float] = [10, 10, 10]
 ) -> str:
     """
-    Generate a 3D model from text or image, load it into the scene and transform it.
+    Search for a 3D model using text prompt in USD libraries, then load and position it in the scene.
     
     Args:
-        text_prompt (str, optional): Text prompt for 3D generation
-        image_url (str, optional): URL of image for 3D generation
-        position (list, optional): Position to place the model [x, y, z]
-        scale (list, optional): Scale of the model [x, y, z]
+        text_prompt (str): Text description to search for matching 3D models
+        target_path (str, optional): Path where the USD model will be placed in the scene
+        position (list, optional): Position coordinates [x, y, z] for placing the model
+        scale (list, optional): Scale factors [x, y, z] to resize the model
         
     Returns:
-        String with the task_id and prim_path information
+        String with search results including task_id and prim_path of the loaded model
     """
     if not text_prompt:
         return "Error: Either text_prompt or image_url must be provided"
@@ -703,7 +703,7 @@ def usd_search_3d_from_text(
         params = {"text_prompt": text_prompt, 
                   "target_path": target_path}
             
-        result = isaac.send_command("usd_search_3d_from_text", params)
+        result = isaac.send_command("search_3d_usd_by_text", params)
         if result.get("status") == "success":
             task_id = result.get("task_id")
             prim_path = result.get("prim_path")

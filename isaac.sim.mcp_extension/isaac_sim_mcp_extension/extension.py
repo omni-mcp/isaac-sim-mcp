@@ -301,7 +301,7 @@ class MCPExtension(omni.ext.IExt):
             "create_robot": self.create_robot,
             "generate_3d_from_text_or_image": self.generate_3d_from_text_or_image,
             "transform": self.transform,
-            "usd_search_3d_from_text": self.usd_search_3d_from_text,
+            "search_3d_usd_by_text": self.search_3d_usd_by_text,
         }
         
         handler = handlers.get(cmd_type)
@@ -730,9 +730,9 @@ class MCPExtension(omni.ext.IExt):
                 "message": str(e)
             }
     
-    def usd_search_3d_from_text(self, text_prompt:str, target_path:str, position=(0, 0, 50), scale=(10, 10, 10)):
+    def search_3d_usd_by_text(self, text_prompt:str, target_path:str, position=(0, 0, 50), scale=(10, 10, 10)):
         """
-        search a USD assets in USD Search service, load it into the scene and transform it.
+        Search a USD assets in USD Search service, load it into the scene and transform it.
         
         Args:
             text_prompt (str, optional): Text prompt for 3D generation
@@ -754,22 +754,13 @@ class MCPExtension(omni.ext.IExt):
             
             searcher3d = USDSearch3d()
             url = searcher3d.search( text_prompt )
+
+            loader = USDLoader()
+            prim_path = loader.load_usd_from_url( url, target_path )
+            print(f"loaded url {url} to scene, prim path is: {prim_path}")
+            # TODO: transform the model, need to fix the transform function for loaded USD
+            # loader.transform(prim=prim_path, position=position, scale=scale)
             
-            def load_model_into_scene(url, target_path):
-                # Load the model from url into the scene
-                loader = USDLoader()
-                prim_path = loader.load_usd_from_url( url, target_path )
-                print(f"loaded url {url} to scene, prim path is: {prim_path}")
-                
-                stage = omni.usd.get_context().get_stage()
-                prim = stage.GetPrimAtPath(prim_path)
-                # Transform the model
-                loader.transform(prim=prim, position=position, scale=scale)
-            
-                return prim_path
-            
-            prim_path = load_model_into_scene(url, target_path=target_path)
-        
             return {
                     "status": "success",
                     "prim_path": prim_path,
