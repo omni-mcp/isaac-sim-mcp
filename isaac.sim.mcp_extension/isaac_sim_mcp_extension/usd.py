@@ -25,6 +25,7 @@ SOFTWARE.
 import os
 import carb
 import omni.usd
+import omni
 from pathlib import Path
 from pxr import UsdShade, Sdf, UsdGeom, Gf
 from omni.isaac.core.utils.stage import add_reference_to_stage
@@ -199,9 +200,9 @@ class USDLoader:
                 break
         
         if translate_op:
-            translate_op.Set(Gf.Vec3d(position))
+            translate_op.Set(Gf.Vec3d(position[0],position[1],position[2]))
         else:
-            xformable.AddTranslateOp().Set(Gf.Vec3d(position))
+            xformable.AddTranslateOp().Set(Gf.Vec3d(position[0],position[1],position[2]))
         print(f"Model positioned at {position}")
         
         # Handle scaling
@@ -212,9 +213,9 @@ class USDLoader:
                 break
         
         if scale_op:
-            scale_op.Set(Gf.Vec3d(scale))
+            scale_op.Set(Gf.Vec3d(scale[0],scale[1],scale[2]))
         else:
-            xformable.AddScaleOp().Set(Gf.Vec3d(scale))
+            xformable.AddScaleOp().Set(Gf.Vec3d(scale[0],scale[1],scale[2]))
         print(f"Model scaled to {scale}")
         
         return xformable
@@ -261,22 +262,19 @@ class USDLoader:
         
         # Add scale operation if provided
         if scale is not None:
-            scale_op = xformable.AddXformOp(UsdGeom.XformOp.TypeScale)
+            scale_op = xformable.AddXformOp(UsdGeom.XformOp.TypeScale, UsdGeom.XformOp.PrecisionFloat)
             scale_op.Set(Gf.Vec3d(scale[0], scale[1], scale[2]))
             ops.append(scale_op)
-        
         # Add rotation operation if provided
         if rotation is not None:
             rot_op = xformable.AddXformOp(UsdGeom.XformOp.TypeRotateXYZ, UsdGeom.XformOp.PrecisionDouble)
             rot_op.Set(Gf.Vec3d(rotation[0], rotation[1], rotation[2]))
             ops.append(rot_op)
-        
         # Add translation operation if provided
         if location is not None:
             trans_op = xformable.AddXformOp(UsdGeom.XformOp.TypeTranslate, UsdGeom.XformOp.PrecisionDouble)
             trans_op.Set(Gf.Vec3d(location[0], location[1], location[2]))
             ops.append(trans_op)
-        
         # Apply transform operations in order
         xformable.SetXformOpOrder(ops)
     
@@ -459,10 +457,65 @@ class USDSearch3d:
                 )
             )
         )
-        return response
+        carb.log_info(f"usd_search_3d_from_text return code: {response.status_code}")
+        details = json.dumps(response.json(), indent=2)
+        details = json.loads(details)
+        url = details[0]['url']
+
+        # Convert S3 URL to HTTPS URL if needed
+        if url.startswith("s3://deepsearch-demo-content"):
+            url = url.replace("s3://deepsearch-demo-content", "https://omniverse-content-production.s3.us-west-2.amazonaws.com")
+        return url
+    
+    @staticmethod
+    def test_search_and_load():
+        text_prompt = "a rusty desk"
+        searcher3d = USDSearch3d()
+        url = searcher3d.search(text_prompt)      
+        target_path = "/World/search_usd"
+        loader = USDLoader()
+        prim_path = loader.load_usd_from_url( url, target_path )
+
+    @staticmethod
+    def usd_search_3d_from_text(text_prompt:str, target_path:str, position=(0, 0, 50), scale=(10, 10, 10)):
+        """
+        search a USD assets in USD Search service, load it into the scene and transform it.
+        
+        Args:
+            text_prompt (str, ): Text prompt for 3D generation
+            target_path (str, ): target path in current scene stage
+            position (tuple, optional): Position to place the model
+            scale (tuple, optional): Scale of the model
+            
+        Returns:
+            dict: Dictionary with the task_id and prim_path
+        """
+        try:
+            searcher3d = USDSearch3d()
+            url = searcher3d.search(text_prompt)      
+            loader = USDLoader()
+            #TODO： need to validate transform location
+            prim_path = loader.load_usd_from_url(url, target_path, location=position, scale=scale)
+            stage = omni.usd.get_context().get_stage()
+            prim = stage.GetPrimAtPath(prim_path)
+            loader.transform(prim=prim, position=position, scale=scale)
+            
+            return {"url": url, "prim_path": prim_path}
+        except Exception as e:
+            carb.log_error(f"Error in usd_search_3d_from_text: {str(e)}")
+            return {"error": str(e)}
+        
 
 if __name__ == "__main__":
     # USDLoader.main()
-    USDLoader.test_tasks_load()
-    USDLoader.test_absolute_paths()
+    #USDLoader.test_tasks_load()
+    #USDLoader.test_absolute_paths()
+    #USDSearch3d.test_search_and_load()
     
+    USDSearch3d.usd_search_3d_from_text(text_prompt="a rusty desk", target_path="/World/search_desk",    position=(0, 0, 0), scale=(3, 3, 3))
+    #USDSearch3d.usd_search_3d_from_text(text_prompt="a rusty apple", target_path="/World/search_apple", position=(0, 0, 0), scale=(3, 3, 3))
+    USDSearch3d.usd_search_3d_from_text(text_prompt="a rusty chair", target_path="/World/search_chair", position=(10, 0, 0), scale=(3, 3, 3))
+    USDSearch3d.usd_search_3d_from_text(text_prompt="a rusty sofa", target_path="/World/search_chair",  position=(20, 0, 0), scale=(3, 3, 3))
+
+
+
