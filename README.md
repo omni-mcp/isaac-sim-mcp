@@ -128,17 +128,12 @@ create more obstacles in the stage
 ```
 Use following images to generate beaver 3d objects and place them into a grid area across [0, 0, 0] to [40, 40, 0] with scale [3, 3, 3]
 
-https://lvlecheng.tos-cn-beijing.volces.com/chore/model_gen_jpeg/TV%20shelf.png
-https://lvlecheng.tos-cn-beijing.volces.com/chore/model_gen_jpeg/chair.png
-https://lvlecheng.tos-cn-beijing.volces.com/chore/model_gen_jpeg/desk.png
-https://lvlecheng.tos-cn-beijing.volces.com/chore/model_gen_jpeg/fridge.png
-https://lvlecheng.tos-cn-beijing.volces.com/chore/model_gen_jpeg/sofa.png
-https://lvlecheng.tos-cn-beijing.volces.com/chore/model_gen_jpeg/tea%20desk.png
+<your image url here, could be multiple images urls>
 ```
 
 ### USD search
 ```
-search a rusty table and place it at [0, 5, 0] with scale [3, 3, 3]
+search a rusty desk and place it at [0, 5, 0] with scale [3, 3, 3]
 ```
 
 ## MCP Tools
