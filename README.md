@@ -1,4 +1,5 @@
 # Isaac Sim MCP Extension and MCP Server
+[![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/omni-mcp/isaac-sim-mcp)](https://archestra.ai/mcp-catalog/omni-mcp__isaac-sim-mcp)
 
 The MCP Server and its extension leverage the Model Context Protocol (MCP) framework to enable natural language control of NVIDIA Isaac Sim, transforming conversational AI inputs into precise simulation manipulation. This expansion bridges the MCP ecosystem with embodied intelligence applications.
 
