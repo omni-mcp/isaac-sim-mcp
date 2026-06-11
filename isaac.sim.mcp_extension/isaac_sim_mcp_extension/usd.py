@@ -28,7 +28,10 @@ import omni.usd
 import omni
 from pathlib import Path
 from pxr import UsdShade, Sdf, UsdGeom, Gf
-from omni.isaac.core.utils.stage import add_reference_to_stage
+try:  # Isaac Sim 5.0/6.0 namespace, with 4.x fallback
+    from isaacsim.core.utils.stage import add_reference_to_stage
+except ImportError:
+    from omni.isaac.core.utils.stage import add_reference_to_stage
 import json
 import requests
 

@@ -6,10 +6,14 @@ description = "MCP server extension for Isaac Sim to enable communication with C
 category = "Robotics"
 keywords = ["mcp", "server", "socket", "simulation", "robotics"]
 
+# Updated for Isaac Sim 5.0/6.0 (isaacsim.* namespace). The old omni.isaac.*
+# extensions were removed in 5.0+, so declaring them here would block loading.
 [dependencies]
-"omni.isaac.core" = {}
+"isaacsim.core.api" = {}
+"isaacsim.core.prims" = {}
+"isaacsim.core.utils" = {}
+"isaacsim.storage.native" = {}
 "omni.kit.uiapp" = {}
-"omni.isaac.ui" = {}
 
 
 
