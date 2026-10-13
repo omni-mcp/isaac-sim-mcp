@@ -194,7 +194,7 @@ Below are demonstrations of the Isaac Sim MCP Extension in action:
 *GIF: Adding more robots to the simulation using natural language commands*
 
 
-### Video Format (MP4)
+### Video Format (MP4) Review
 
 For higher quality video, you can access the MP4 version directly:
 
