@@ -750,6 +750,216 @@ def transform(
         logger.error(f"Error transforming model: {str(e)}")
         return f"Error transforming model: {str(e)}"
 
+   
+@mcp.tool()
+def list_prims() -> str:
+    """
+    List all prim paths in the current USD scene.
+    Useful for discovering available objects before moving, reading poses, or other operations.
+    
+    Example:
+        list_prims()
+    """
+    try:
+        isaac = get_isaac_connection()
+        result = isaac.send_command("list_prims")
+        
+        if result.get("status") == "success":
+            prims = result.get("prims", [])
+            
+            response = f"Prims in scene ({len(prims)}):\n\n"
+            
+            for prim in prims:
+                path = prim['path']
+                name = prim['name']
+                prim_type = prim['type']
+                
+                # Format: path (type) or path [name] (type) if name differs
+                if name and name != path.split('/')[-1]:
+                    response += f"{path} [{name}] ({prim_type})\n"
+                else:
+                    response += f"{path} ({prim_type})\n"
+            
+            return response
+        else:
+            return f"Error listing prims: {result.get('message', 'Unknown error')}"
+            
+    except Exception as e:
+        logger.error(f"Error listing prims: {str(e)}")
+        return f"Error listing prims: {str(e)}"
+
+@mcp.tool()
+def open_usd(usd_path: str) -> str:
+    """
+    Open a USD file in the Isaac Sim stage.
+    
+    Args:
+        usd_path: Path to the USD file (local or Omniverse path)
+    
+    Examples:
+        open_usd("omniverse://localhost/Library/Aruco/DT.usd")
+        open_usd("/path/to/your/file.usd")
+    """
+    try:
+        # Use the existing connection pattern like other tools
+        isaac = get_isaac_connection()
+        result = isaac.send_command("open_usd", {
+            "usd_path": usd_path
+        })
+        return f"Successfully opened USD stage: {result.get('message', '')}"
+    except Exception as e:
+        logger.error(f"Error opening USD: {str(e)}")
+        return f"Error opening USD: {str(e)}"
+
+@mcp.tool()
+def import_usd(usd_path: str, prim_path: str = None, position: list = None, orientation: list = None, orientation_format: str = "degrees") -> str:
+    """
+    Import a USD file as a prim into the Isaac Sim stage with flexible orientation input.
+    
+    Args:
+        usd_path: Path to the USD file (local or Omniverse path)
+        prim_path: Target prim path (optional, auto-generated if not provided)
+        position: [x, y, z] position coordinates (optional, defaults to [0, 0, 0])
+        orientation: Orientation values (optional, defaults to [0, 0, 0])
+        orientation_format: Format of orientation input - "degrees", "radians", or "quaternion"
+    
+    Examples:
+        import_usd("omniverse://localhost/Library/Aruco/objs/base_0.usd")
+        import_usd("omniverse://localhost/Library/Aruco/objs/base_0.usd", position=[1.0, 2.0, 0.0], orientation=[0, 0, 45], orientation_format="degrees")
+        import_usd("omniverse://localhost/Library/Aruco/objs/base_0.usd", orientation=[0, 0, 0.785], orientation_format="radians")  
+        import_usd("omniverse://localhost/Library/Aruco/objs/base_0.usd", orientation=[1, 0, 0, 0], orientation_format="quaternion")
+    """
+    try:
+        # Use the existing connection pattern like other tools
+        isaac = get_isaac_connection()
+        
+        result = isaac.send_command("import_usd", {
+            "usd_path": usd_path,
+            "prim_path": prim_path,
+            "position": position,
+            "orientation": orientation,
+            "orientation_format": orientation_format
+        })
+        
+        return f"Successfully imported USD: {result.get('message', '')}, prim path: {result.get('prim_path', '')}, position: {result.get('position', [0, 0, 0])}, orientation: {result.get('orientation', [0, 0, 0])} ({result.get('orientation_format', 'degrees')})"
+        
+    except Exception as e:
+        logger.error(f"Error importing USD: {str(e)}")
+        return f"Error importing USD: {str(e)}"
+
+@mcp.tool()
+def get_object_info(prim_path: str) -> str:
+    """
+    Get comprehensive information about an object including its pose in all formats.
+    
+    Args:
+        prim_path: Path to the prim/object (use list_prims() to find available paths)
+    
+    Example:
+        get_object_info("/World/UR5e")
+    """
+    try:
+        isaac = get_isaac_connection()
+        result = isaac.send_command("get_object_info", {"prim_path": prim_path})
+        
+        if result.get("status") == "success":
+            prim_info = result.get("prim_info", {})
+            position = result.get("position", [])
+            quat = result.get("rotation_quaternion", [])
+            rad = result.get("rotation_radians", [])
+            deg = result.get("rotation_degrees", [])
+            scale = result.get("scale", [])
+            
+            response = f"Object Info for {prim_path}:\n\n"
+            
+            # Basic info
+            response += f"Basic Properties:\n"
+            response += f"  Name: {prim_info.get('name', 'N/A')}\n"
+            response += f"  Type: {prim_info.get('type', 'N/A')}\n"
+            response += f"  Active: {prim_info.get('is_active', False)}\n"
+            response += f"  Has Children: {prim_info.get('has_children', False)}\n\n"
+            
+            # Transform info
+            response += f"Transform:\n"
+            response += f"  Position: [{position[0]:.3f}, {position[1]:.3f}, {position[2]:.3f}]\n\n"
+            response += f"  Rotation:\n"
+            response += f"    Degrees (r,p,y): [{deg[0]:.3f}, {deg[1]:.3f}, {deg[2]:.3f}]\n"
+            response += f"    Radians (r,p,y): [{rad[0]:.3f}, {rad[1]:.3f}, {rad[2]:.3f}]\n"
+            response += f"    Quaternion (w,x,y,z): [{quat[0]:.3f}, {quat[1]:.3f}, {quat[2]:.3f}, {quat[3]:.3f}]\n\n"
+            response += f"  Scale: [{scale[0]:.3f}, {scale[1]:.3f}, {scale[2]:.3f}]"
+            
+            return response
+        else:
+            return f"Error getting object info: {result.get('message', 'Unknown error')}"
+            
+    except Exception as e:
+        logger.error(f"Error getting object info: {str(e)}")
+        return f"Error getting object info: {str(e)}"
+
+
+@mcp.tool()
+def move_prim(prim_path: str, position: list = None, orientation: list = None, 
+              orientation_format: str = "degrees") -> str:
+    """
+    Move a prim to a new pose with flexible orientation input.
+    Reads current pose and allows selective updates to position and orientation.
+    
+    Args:
+        prim_path: Path to the prim/object (use list_prims() to find available paths)
+        position: [x, y, z] new position (optional, keeps current if not specified)
+        orientation: New orientation values (optional, keeps current if not specified)
+        orientation_format: "degrees", "radians", or "quaternion" (default: degrees)
+    
+    Examples:
+        # Move to new position only
+        move_prim("/World/trial", position=[1.0, 2.0, 0.5])
+        
+        # Move with rotation in degrees
+        move_prim("/World/trial", position=[1.0, 2.0, 0.5], orientation=[0, 0, 45])
+        
+        # Move with rotation in radians
+        move_prim("/World/trial", position=[1.0, 2.0, 0.5], orientation=[0, 0, 0.785], orientation_format="radians")
+        
+        # Move with quaternion
+        move_prim("/World/trial", position=[1.0, 2.0, 0.5], orientation=[0.924, 0, 0, 0.383], orientation_format="quaternion")
+        
+        # Just rotate, keep current position
+        move_prim("/World/trial", orientation=[90, 0, 0])
+    """
+    try:
+        isaac = get_isaac_connection()
+        result = isaac.send_command("move_prim", {
+            "prim_path": prim_path,
+            "position": position,
+            "orientation": orientation,
+            "orientation_format": orientation_format
+        })
+        
+        if result.get("status") == "success":
+            prev_pos = result.get("previous_position", [])
+            prev_quat = result.get("previous_quaternion", [])
+            new_pos = result.get("new_position", [])
+            new_quat = result.get("new_quaternion", [])
+            
+            response = f"Successfully moved {prim_path}:\n\n"
+            
+            response += f"Previous Pose:\n"
+            response += f"  Position: [{prev_pos[0]:.3f}, {prev_pos[1]:.3f}, {prev_pos[2]:.3f}]\n"
+            response += f"  Quaternion: [{prev_quat[0]:.3f}, {prev_quat[1]:.3f}, {prev_quat[2]:.3f}, {prev_quat[3]:.3f}]\n\n"
+            
+            response += f"New Pose:\n"
+            response += f"  Position: [{new_pos[0]:.3f}, {new_pos[1]:.3f}, {new_pos[2]:.3f}]\n"
+            response += f"  Quaternion: [{new_quat[0]:.3f}, {new_quat[1]:.3f}, {new_quat[2]:.3f}, {new_quat[3]:.3f}]\n"
+            response += f"  Orientation Format: {result.get('orientation_format', 'degrees')}"
+            
+            return response
+        else:
+            return f"Error moving prim: {result.get('message', 'Unknown error')}"
+            
+    except Exception as e:
+        logger.error(f"Error moving prim: {str(e)}")
+        return f"Error moving prim: {str(e)}"
+
 # Main execution
 
 def main():
